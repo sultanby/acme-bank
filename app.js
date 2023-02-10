@@ -35,7 +35,7 @@ app.post("/auth", function (request, response) {
   var password = request.body.password;
   if (username && password) {
     db.get(
-      `SELECT * FROM users WHERE username = '${request.body.username}' AND password = '${request.body.password}'`,
+      `SELECT * FROM users WHERE username = ? AND password = ?`, [username, password],
       function (error, results) {
         console.log(error);
         console.log(results);
@@ -171,7 +171,7 @@ app.post("/public_forum", function (request, response) {
     var username = request.session.username;
     if (comment) {
       db.all(
-        `INSERT INTO public_forum (username,message) VALUES ('${username}','${comment}')`,
+        `INSERT INTO public_forum (username,message) VALUES (?, ?)`, [username, comment], 
         (err, rows) => {
           console.log(err);
         }
@@ -199,10 +199,10 @@ app.post("/public_forum", function (request, response) {
 //SQL UNION INJECTION
 app.get("/public_ledger", function (request, response) {
   if (request.session.loggedin) {
-    var id = request.query.id;
+    var id = parseInt(request.query.id);
     if (id) {
       db.all(
-        `SELECT * FROM public_ledger WHERE from_account = '${id}'`,
+        `SELECT * FROM public_ledger WHERE from_account = ?`, [id],
         (err, rows) => {
           console.log("PROCESSING INPU");
           console.log(err);
