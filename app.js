@@ -4,6 +4,8 @@ const session = require("express-session");
 const path = require("path");
 const helmet = require("helmet");
 const validator = require("express-validator");
+const csurf = require("csurf");
+const cookieParser = require("cookie-parser");
 const fs = require("fs");
 
 const db = new sqlite3.Database("./bank_sample.db");
@@ -24,6 +26,22 @@ app.use(
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(cookieParser());
+
+const csrfMiddleware = csurf({
+  cookie: {
+    sameSite: "none"
+  },
+});
+
+app.use((error, request, response, next) => {
+  if (error.code = 'EBADCSRFTOKEN') {
+    response.status(403);
+    response.send('The  token isinvalid');
+  } else {
+    next();
+  }
+});
 
 app.get("/", function (request, response) {
   response.sendFile(path.join(__dirname + "/html/login.html"));
@@ -71,17 +89,17 @@ app.get("/home", function (request, response) {
 });
 
 //CSRF CODE SECURED. SEE HEADERS SET ABOVE
-app.get("/transfer", function (request, response) {
+app.get("/transfer", csrfMiddleware, function (request, response) {
   if (request.session.loggedin) {
     var sent = "";
-    response.render("transfer", { sent });
+    response.render("transfer", { sent, csrfToken: request.csrfToken() });
   } else {
     response.redirect("/");
   }
 });
 
 //CSRF CODE
-app.post("/transfer", function (request, response) {
+app.post("/transfer", csrfMiddleware, function (request, response) {
   if (request.session.loggedin) {
     console.log("Transfer in progress");
     var balance = request.session.balance;
