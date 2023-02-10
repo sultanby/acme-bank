@@ -2,6 +2,8 @@ const sqlite3 = require("sqlite3");
 const express = require("express");
 const session = require("express-session");
 const path = require("path");
+const helmet = require("helmet");
+const validator = require("express-validator");
 const fs = require("fs");
 
 const db = new sqlite3.Database("./bank_sample.db");
@@ -10,6 +12,7 @@ const app = express();
 const PORT = 3000;
 app.set("view engine", "ejs");
 app.use(express.static(path.join(__dirname, "public")));
+app.use(helmet());
 
 app.use(
   session({
@@ -164,7 +167,7 @@ app.get("/public_forum", function (request, response) {
 
 app.post("/public_forum", function (request, response) {
   if (request.session.loggedin) {
-    var comment = request.body.comment;
+    var comment = validator.escape(request.body.comment);
     var username = request.session.username;
     if (comment) {
       db.all(
